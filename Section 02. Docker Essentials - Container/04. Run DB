@@ -1,0 +1,53 @@
+# Docker 데이터베이스 컨테이너 실습
+
+## 태그(tag) 관련
+- 이미지명 뒤에 `:태그`를 명시하지 않으면 **자동으로 `latest` 태그**가 붙음
+  - `docker run mariadb` = `docker run mariadb:latest`
+
+## 첫 실행 시 바로 종료되는 문제
+- `docker run mariadb` (또는 mysql) 실행 시, 데몬 프로세스임에도 곧바로 **Exited** 상태가 됨
+- 원인: **루트 계정 패스워드 미지정** → 강제 종료됨
+- 해결: 아래 중 하나를 반드시 지정해야 함
+  - `MARIADB_ROOT_PASSWORD` (비밀번호 지정)
+  - `MARIADB_ALLOW_EMPTY_ROOT_PASSWORD=true` (빈 패스워드 허용)
+  - `MARIADB_RANDOM_ROOT_PASSWORD`
+
+## 정상 실행 예시
+```
+docker run -e MARIADB_ALLOW_EMPTY_ROOT_PASSWORD=true --name my-mariadb mariadb
+```
+- `-e`: 환경 변수 지정 (여기서는 루트 패스워드 관련)
+- `--name`: 컨테이너 이름 명시 (미지정 시 랜덤 이름 부여)
+- 정상 기동 시 로그에 **3306 포트**로 소켓 허용되었다는 메시지 출력
+- `-d` 없이 실행하면 로그가 터미널을 점유 → 다른 명령을 쓰려면 **새 터미널**을 열어야 함
+
+## `-d` (백그라운드/데몬 모드)
+```
+docker run -d -e MARIADB_ALLOW_EMPTY_ROOT_PASSWORD=true --name my-mariadb mariadb
+```
+- CLI와 분리되어 백그라운드로 실행, 컨테이너 ID만 출력됨
+- 같은 터미널에서 이후 명령어를 계속 입력 가능
+
+## 자주 만나는 오류: 컨테이너 이름 중복
+- 같은 `--name`으로 다시 실행 시 **이미 사용 중인 이름**이라는 오류 발생
+- 원인: 이전 컨테이너가 **Exited 상태로 남아있음** (`docker ps -a`로 확인 가능)
+- 해결: `docker rm [컨테이너명]`으로 삭제 후 재실행
+
+## 컨테이너 내부 접속해서 DB 클라이언트 쓰기
+```
+docker exec -it my-mariadb bash
+mariadb -h [호스트] -u root -p
+```
+- `exec -it`: 실행 중인 컨테이너 내부에서 새 프로세스(bash) 실행
+- 컨테이너 내부에서 DB 클라이언트로 접속 후 `show databases`, `use`, `select` 등 SQL 명령 사용 가능
+- 컨테이너 종료 후에도 로그아웃만 될 뿐, `-d`로 띄운 컨테이너 자체는 계속 작동 중
+
+## 종료/정리
+| 명령어 | 설명 |
+|---|---|
+| `docker stop [id/name]` | 컨테이너 정지 (데이터베이스처럼 계속 실행되는 프로세스는 `Ctrl+C`로 종료 안 될 수 있어 `stop` 사용) |
+| `docker ps -a` | 정지된(Exited) 컨테이너까지 확인 |
+| `docker rm [id/name]` | 정지된 컨테이너 삭제 (여러 개 나열해서 한번에 삭제 가능) |
+
+## 핵심 포인트
+> DB 이미지는 실행 시 **루트 패스워드 지정이 필수**이며, 지정하지 않으면 즉시 종료된다. `-d`로 백그라운드 실행하고, `exec -it`로 내부에 들어가 DB 클라이언트를 사용하는 흐름을 기억할 것.
