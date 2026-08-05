@@ -1,1 +1,49 @@
-# Building and Managing Containerized Application
+# 멀티 컨테이너 관리와 Docker Compose 배경
+
+## 왜 멀티 컨테이너 관리가 필요한가?
+- 실제 IT 서비스는 데이터베이스 하나로 끝나지 않고, 다양한 미들웨어/서비스가 각각 컨테이너로 실행됨
+  - 예: Kafka/RabbitMQ(메시지 큐잉), Zipkin(분산 트랜잭션 추적), Prometheus/Grafana(모니터링), Elasticsearch(로그/검색), MariaDB(DB) 등
+  - 여기에 사용자/주문/결제/배송 같은 **비즈니스 로직 서비스**들도 각각 컨테이너로 분리해서 운영 (마이크로서비스 아키텍처)
+- 이런 인프라성 요소를 **아우터(Outer) 아키텍처**, 비즈니스 로직 서비스를 **이너(Inner) 아키텍처**라고 구분해서 부르기도 함
+- 컨테이너 수가 수십~수백 개로 늘어나면 `docker run` 명령어를 매번 하나씩 수작업으로 실행하는 것은 비효율적 → **관리 도구가 필요**
+
+## 지금까지 배운 것 vs 필요한 것
+| 지금까지 (수작업) | 필요해지는 것 |
+|---|---|
+| `docker build`로 이미지 생성 | 여러 이미지를 한번에 정의 |
+| `docker push`/`pull`로 레지스트리 연동 | - |
+| `docker run [옵션들]`로 컨테이너 하나씩 실행 | 여러 컨테이너를 **한 번에** 정의·실행 |
+| `docker network`, `docker volume` 개별 관리 | 네트워크/볼륨까지 포함해서 **스크립트 파일 하나**로 관리 |
+
+→ 이 역할을 하는 것이 **Docker Compose** (컨테이너 여러 개를 스크립트 파일로 정의해서 한번에 관리)
+
+---
+
+## CI/CD 파이프라인에서 Docker의 위치
+
+```
+[CI] Git(형상관리) → 빌드(컴파일+테스트) → 패키징
+                                            ↓
+[CD] Dockerfile → docker build → 이미지 생성 → Registry에 push
+                                            ↓
+                              배포 대상 서버에서 pull → 컨테이너 실행
+                                            ↓
+                    (컨테이너 수가 많아지면) 오케스트레이션 도구로 관리
+```
+
+- **CI(Continuous Integration)**: 소스코드 → 빌드(컴파일/테스트) → 패키징까지의 지속적 통합 과정
+- **CD(Continuous Delivery/Deployment)**: 패키징된 결과물을 실행 가능한 환경(컨테이너 등)으로 배포하는 과정
+  - 이 단계에서 Dockerfile로 이미지를 만들고, 애플리케이션의 환경설정 파일도 함께 포함해서 이미지화하는 것이 이상적
+  - 완성된 이미지는 Docker Registry(Private/Public)에 저장
+- 배포 단계에서 컨테이너 수가 많아지면 **Docker Compose → 오케스트레이션 도구(Kubernetes 등)**로 관리 범위가 확장됨
+
+---
+
+## Docker vs 오케스트레이션 도구(Kubernetes, Mesos, OpenShift 등)
+- **Docker**: 컨테이너를 만들고 실행하는 **가상화 기술** 자체. Kubernetes 없이도 단독으로 잘 작동함
+- **Kubernetes/Mesos/OpenShift**: 컨테이너의 **리소스, 스케줄링을 관리**하는 오케스트레이션 도구
+  - 이들은 관리할 **컨테이너(Docker 등)가 반드시 있어야만 작동** 가능 (컨테이너 기술에 의존적)
+- 즉 Docker는 독립적으로 동작 가능하지만, 오케스트레이션 도구는 Docker 같은 컨테이너 기술 없이는 동작 불가
+
+## 핵심 포인트
+> 컨테이너가 몇 개 안 될 때는 `docker run`을 하나씩 실행해도 되지만, 서비스 수가 늘어나면 이미지 생성부터 네트워크·볼륨 설정까지 한 번에 관리할 방법이 필요하다. 이를 위한 것이 **Docker Compose**이며, 더 큰 규모(수백~수천 컨테이너)에서는 **Kubernetes 같은 오케스트레이션 도구**로 확장한다.
