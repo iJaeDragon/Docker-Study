@@ -568,3 +568,53 @@ Docker Volume
 구조가 됨.
 
 ---
+
+# 14. 같은 서버에서 여러 WAS가 실행되는 경우
+
+하나의 Docker Host에서 여러 WAS 컨테이너를 실행하는 경우:
+
+```text
+Docker Host
+│
+├── WAS 1
+│   └── /app/uploads ──┐
+│                     │
+├── WAS 2              │
+│   └── /app/uploads ──┼──→ upload-data Volume
+│                     │
+└── WAS 3              │
+    └── /app/uploads ──┘
+```
+
+이 경우 같은 Volume을 여러 컨테이너가 사용할 수 있음.
+
+---
+
+# 15. 여러 서버로 구성된 클러스터에서는 주의
+
+WAS Cluster가 여러 서버에 걸쳐 있는 경우에는 주의해야 함.
+
+예:
+
+```text
+서버 A                         서버 B
+┌─────────────────┐            ┌─────────────────┐
+│ Docker          │            │ Docker          │
+│                 │            │                 │
+│ WAS 1           │            │ WAS 2           │
+│                 │            │                 │
+│ Volume A        │            │ Volume B        │
+└─────────────────┘            └─────────────────┘
+```
+
+이 경우:
+
+```text
+Volume A ≠ Volume B
+```
+
+임.
+
+따라서 WAS 1에서 Volume A에 저장한 파일을 WAS 2가 자동으로 볼 수 없음.
+
+---
