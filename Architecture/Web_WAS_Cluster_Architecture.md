@@ -372,3 +372,199 @@ upload-data
 ```
 
 ---
+
+# 10. Spring에서 파일 저장
+
+Spring 애플리케이션에서는 Docker Volume을 직접 알 필요가 없음.
+
+Spring은 단순히 컨테이너 내부 경로에 파일을 저장함.
+
+예:
+
+```java
+String uploadPath = "/app/uploads";
+```
+
+파일 저장:
+
+```java
+Path path = Paths.get(
+    uploadPath,
+    file.getOriginalFilename()
+);
+
+Files.copy(
+    file.getInputStream(),
+    path,
+    StandardCopyOption.REPLACE_EXISTING
+);
+```
+
+Spring 입장에서는 단순히:
+
+```text
+/app/uploads/test.pdf
+```
+
+라는 경로에 파일을 저장하는 것.
+
+---
+
+# 11. Spring의 경로와 Docker Mount의 관계
+
+Docker:
+
+```yaml
+volumes:
+  - upload-data:/app/uploads
+```
+
+Spring:
+
+```java
+String uploadPath = "/app/uploads";
+```
+
+이 둘이 연결되어 있음.
+
+```text
+Spring
+  │
+  │ /app/uploads/test.pdf
+  ▼
+Container
+  │
+  │ Mount
+  ▼
+Docker Volume
+  │
+  │ upload-data
+  ▼
+실제 저장공간
+```
+
+따라서 Spring에서 `/app/uploads`에 파일을 저장하면 **자동으로 Docker Volume에 저장됨**.
+
+Spring이 Docker Volume에 저장하는 것이 아니라:
+
+```text
+Spring
+→ /app/uploads에 저장
+
+Docker
+→ /app/uploads를 Volume에 Mount
+
+결과
+→ Volume에 저장
+```
+
+이라는 구조임.
+
+---
+
+# 12. 경로를 잘못 입력하면 어떻게 되는가?
+
+Docker 설정:
+
+```yaml
+volumes:
+  - upload-data:/app/uploads
+```
+
+이렇게 되어 있는데 Spring에서:
+
+```java
+String uploadPath = "/app/uploadss";
+```
+
+라고 잘못 입력했다고 가정.
+
+그러면:
+
+```text
+Container
+│
+├── /app/uploads
+│      │
+│      └── upload-data Volume
+│
+└── /app/uploadss
+       │
+       └── Volume과 연결되지 않은 경로
+```
+
+따라서:
+
+```text
+/app/uploads/test.pdf
+```
+
+에 저장하면:
+
+```text
+→ Docker Volume에 저장
+```
+
+되지만,
+
+```text
+/app/uploadss/test.pdf
+```
+
+에 저장하면:
+
+```text
+→ Docker Volume에 저장되지 않음
+→ 일반적인 경우 컨테이너의 writable layer에 저장
+```
+
+될 수 있음.
+
+---
+
+# 13. Spring 설정파일로 경로 관리
+
+파일 저장 경로를 Java 코드에 직접 작성하는 것보다 설정파일로 관리하는 것이 좋음.
+
+## application.yml
+
+```yaml
+file:
+  upload-path: /app/uploads
+```
+
+## Java
+
+```java
+@Value("${file.upload-path}")
+private String uploadPath;
+```
+
+파일 저장:
+
+```java
+Path path = Paths.get(
+    uploadPath,
+    file.getOriginalFilename()
+);
+```
+
+이렇게 하면:
+
+```text
+application.yml
+      │
+      │ /app/uploads
+      ▼
+Spring
+      │
+      ▼
+Docker Mount
+      │
+      ▼
+Docker Volume
+```
+
+구조가 됨.
+
+---
