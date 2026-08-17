@@ -20,7 +20,7 @@
 
 ---
 
-## 2. 왜 Kubernetes 대신 Docker Swarm부터 배우는가
+## 2. 왜 Kubernetes 대신 Docker Swarm 차이
 
 출처: [landscape.cncf.io](https://landscape.cncf.io) (CNCF, Cloud Native Computing Foundation — 리눅스 재단 산하, 클라우드 네이티브 기술/규격을 정의·소개하는 단체) → "Orchestration & Management" 카테고리에서 확인 가능.
 
