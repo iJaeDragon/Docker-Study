@@ -82,6 +82,3 @@ Istio는 이 Outer Architecture 영역에서 **서비스 간 TLS 통신, 트래�
 - [ ] "SSL"이라는 용어는 관용적 표현이며, 실질적으로는 더 발전된 버전인 **TLS**를 의미하는 경우가 많음
 
 ---
-- AWS ECS 실습: [`aws-ecs-hands-on.md`](./aws-ecs-hands-on.md)
-- CI/CD와 Docker의 역할: [`cicd-docker-overview.md`](./cicd-docker-overview.md)
-- 클라우드 서비스 모델(IaaS/PaaS/SaaS)과 Docker: [`cloud-service-models.md`](./cloud-service-models.md)
