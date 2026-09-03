@@ -62,7 +62,7 @@
 # 1. Web Server와 WAS 관계
 
 ### Web Server
-##### 웹 서버는 보통 nginx를 사용함.
+##### 웹 서버는 보통 `nginx` 혹은 `webtob`를 사용함.
 #### 역할
 ```
 Nginx
